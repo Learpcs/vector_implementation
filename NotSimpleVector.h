@@ -30,6 +30,8 @@ class NotSimpleVector
 public:
 	using iterator = NotSimpleIterator<T>;
 	NotSimpleVector();
+	NotSimpleVector(const NotSimpleVector<T, Alloc>& a);
+	NotSimpleVector(NotSimpleVector<T, Alloc>&& a);
 
 	size_t size() const noexcept;
 	size_t capacity() const noexcept;
@@ -50,6 +52,15 @@ private:
 
 template<typename T, typename Alloc>
 NotSimpleVector<T, Alloc>::NotSimpleVector() : sz(0), cp(2), arr(std::allocator_traits<Alloc>::allocate(alloc, 2)) {}
+template<typename T, typename Alloc>
+NotSimpleVector<T, Alloc>::NotSimpleVector(const NotSimpleVector<T, Alloc>& a) : sz(a.size()), cp(a.capacity()), arr(std::allocator_traits<Alloc>::allocate(alloc, a.capacity())) 
+{
+	for(size_t i = 0; i < a.size(); ++i)
+	{
+		std::allocator_traits<Alloc>::construct(alloc, arr + i, a[i]);
+	}
+
+}
 
 template<typename T, typename Alloc>
 size_t NotSimpleVector<T, Alloc>::size() const noexcept { return sz; }
