@@ -22,7 +22,6 @@ public:
 
 private:
 	T* ptr;
-	using value_type = T;
 };
 
 template <typename T, typename Alloc = std::allocator<T>>
