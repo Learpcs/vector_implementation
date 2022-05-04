@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <iterator>
+#include <algorithm>
 
 template <typename T>
 class NotSimpleIterator
@@ -16,12 +17,17 @@ public:
 
 	NotSimpleIterator& operator++();
 	NotSimpleIterator operator++(int);
+	NotSimpleIterator& operator--();
+	NotSimpleIterator operator--(int);
+	NotSimpleIterator operator+(int);
+	NotSimpleIterator operator-(int);
 	T& operator*();
 	bool operator==(const NotSimpleIterator& rhs) const;
 	bool operator!=(const NotSimpleIterator& rhs) const;
 
 private:
 	T* ptr;
+	using value_type = T;
 };
 
 template <typename T, typename Alloc = std::allocator<T>>
@@ -30,14 +36,13 @@ class NotSimpleVector
 public:
 	using iterator = NotSimpleIterator<T>;
 	NotSimpleVector();
-	NotSimpleVector(const NotSimpleVector<T, Alloc>& a);
-	NotSimpleVector(NotSimpleVector<T, Alloc>&& a);
 
 	size_t size() const noexcept;
 	size_t capacity() const noexcept;
 	void push_back(const T& a);
 	void pop_back();
-	void insert();
+	void insert(NotSimpleIterator<T> it, const T& value);
+	T& back();
 	T& operator[](size_t index);
 	iterator begin();
 	iterator end();
@@ -52,15 +57,6 @@ private:
 
 template<typename T, typename Alloc>
 NotSimpleVector<T, Alloc>::NotSimpleVector() : sz(0), cp(2), arr(std::allocator_traits<Alloc>::allocate(alloc, 2)) {}
-template<typename T, typename Alloc>
-NotSimpleVector<T, Alloc>::NotSimpleVector(const NotSimpleVector<T, Alloc>& a) : sz(a.size()), cp(a.capacity()), arr(std::allocator_traits<Alloc>::allocate(alloc, a.capacity())) 
-{
-	for(size_t i = 0; i < a.size(); ++i)
-	{
-		std::allocator_traits<Alloc>::construct(alloc, arr + i, a[i]);
-	}
-
-}
 
 template<typename T, typename Alloc>
 size_t NotSimpleVector<T, Alloc>::size() const noexcept { return sz; }
@@ -88,9 +84,18 @@ template<typename T, typename Alloc>
 void NotSimpleVector<T, Alloc>::pop_back() { --sz; }
 
 template<typename T, typename Alloc>
-void NotSimpleVector<T, Alloc>::insert()
+void NotSimpleVector<T, Alloc>::insert(NotSimpleIterator<T> it, const T& value)
 {
-	++sz;
+	NotSimpleVector<T, Alloc>::push_back(value);
+	auto end = NotSimpleVector::end();
+	for (auto i = it; i != end; ++i)
+		swap(*i, this->back());
+}
+
+template<typename T, typename Alloc>
+T& NotSimpleVector<T, Alloc>::back()
+{
+	return *std::prev(this->end());
 }
 
 template<typename T, typename Alloc>
