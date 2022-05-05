@@ -2,6 +2,7 @@
 #include <memory>
 #include <iterator>
 #include <algorithm>
+#include <iostream>
 
 template <typename T>
 class NotSimpleIterator
@@ -19,15 +20,17 @@ public:
 	NotSimpleIterator operator++(int);
 	NotSimpleIterator& operator--();
 	NotSimpleIterator operator--(int);
-	NotSimpleIterator operator+(int);
-	NotSimpleIterator operator-(int);
+	NotSimpleIterator& operator+=(int n);
+	NotSimpleIterator& operator-=(int n);
+	NotSimpleIterator operator+(int n);
+	NotSimpleIterator operator-(int n);
+	ptrdiff_t operator-(const NotSimpleIterator& rhs);
 	T& operator*();
 	bool operator==(const NotSimpleIterator& rhs) const;
 	bool operator!=(const NotSimpleIterator& rhs) const;
 
 private:
 	T* ptr;
-	using value_type = T;
 };
 
 template <typename T, typename Alloc = std::allocator<T>>
@@ -41,7 +44,10 @@ public:
 	size_t capacity() const noexcept;
 	void push_back(const T& a);
 	void pop_back();
+	void pop_back(size_t n);
 	void insert(NotSimpleIterator<T> it, const T& value);
+	void erase(NotSimpleIterator<T> first, NotSimpleIterator<T> last);
+	void erase(NotSimpleIterator<T> first);
 	T& back();
 	T& operator[](size_t index);
 	iterator begin();
@@ -81,7 +87,10 @@ void NotSimpleVector<T, Alloc>::push_back(const T& a)
 	++sz;
 }
 template<typename T, typename Alloc>
-void NotSimpleVector<T, Alloc>::pop_back() { --sz; }
+void NotSimpleVector<T, Alloc>::pop_back() { pop_back(1); }
+
+template<typename T, typename Alloc>
+void NotSimpleVector<T, Alloc>::pop_back(size_t n) { sz -= n; }
 
 template<typename T, typename Alloc>
 void NotSimpleVector<T, Alloc>::insert(NotSimpleIterator<T> it, const T& value)
@@ -89,14 +98,30 @@ void NotSimpleVector<T, Alloc>::insert(NotSimpleIterator<T> it, const T& value)
 	NotSimpleVector<T, Alloc>::push_back(value);
 	auto end = NotSimpleVector::end();
 	for (auto i = it; i != end; ++i)
-		swap(*i, this->back());
+		std::swap(*i, this->back());
 }
 
 template<typename T, typename Alloc>
-T& NotSimpleVector<T, Alloc>::back()
+void NotSimpleVector<T, Alloc>::erase(NotSimpleIterator<T> first, NotSimpleIterator<T> last)
 {
-	return *std::prev(this->end());
+	while (last != NotSimpleVector<T, Alloc>::end())
+	{
+		++last;
+		++first;
+		for (auto it = last - 1; it != first; --it)
+		{
+			std::swap(*it, *(it - 1));
+		}
+		std::swap(*first, *(first - 1));
+	}
+	pop_back(last - first);
 }
+
+template<typename T, typename Alloc>
+void NotSimpleVector<T, Alloc>::erase(NotSimpleIterator<T> first){ NotSimpleVector<T, Alloc>::erase(first, first + 1);}
+
+template<typename T, typename Alloc>
+T& NotSimpleVector<T, Alloc>::back(){ return *std::prev(this->end()); }
 
 template<typename T, typename Alloc>
 T& NotSimpleVector<T, Alloc>::operator[](size_t index) { return arr[index]; }
@@ -108,19 +133,33 @@ NotSimpleIterator<T> NotSimpleVector<T, Alloc>::end() { return NotSimpleIterator
 template<typename T>
 NotSimpleIterator<T>::NotSimpleIterator(T* p) { ptr = p; }
 template<typename T>
-NotSimpleIterator<T>& NotSimpleIterator<T>::operator++()
-{ 
-	++ptr; 
-	return *this; 
-}
+NotSimpleIterator<T>& NotSimpleIterator<T>::operator++(){ ++ptr; return *this; }
 
 template<typename T>
-NotSimpleIterator<T> NotSimpleIterator<T>::operator++(int)
-{
-	NotSimpleIterator<T> cpy = *this;
-	++(*this);
-	return cpy;
-}
+NotSimpleIterator<T> NotSimpleIterator<T>::operator++(int){ NotSimpleIterator<T> cpy = *this; ++(*this); return cpy;}
+
+template<typename T>
+NotSimpleIterator<T>& NotSimpleIterator<T>::operator--(){ --ptr; return *this;}
+
+template<typename T>
+NotSimpleIterator<T> NotSimpleIterator<T>::operator--(int){ NotSimpleIterator<T> cpy = *this; --(*this); return cpy; }
+
+template<typename T>
+NotSimpleIterator<T>& NotSimpleIterator<T>::operator+=(int n){ ptr += n; return *this; }
+
+template<typename T>
+NotSimpleIterator<T>& NotSimpleIterator<T>::operator-=(int n) {	ptr -= n; return *this; }
+
+template<typename T>
+NotSimpleIterator<T> NotSimpleIterator<T>::operator+(int n){ NotSimpleIterator<T> res = *this; res += n; return res; }
+
+template<typename T>
+NotSimpleIterator<T> NotSimpleIterator<T>::operator-(int n){ NotSimpleIterator<T> res = *this; res -= n; return res;}
+
+template<typename T>
+ptrdiff_t NotSimpleIterator<T>::operator-(const NotSimpleIterator<T>& rhs){	return this->ptr - rhs.ptr; }
+
+
 
 template<typename T>
 T& NotSimpleIterator<T>::operator*() { return *ptr; }

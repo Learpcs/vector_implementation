@@ -2,12 +2,11 @@
 #include <iostream>
 using namespace std;
 
+template class NotSimpleVector<int>;
+
 int main()
 {
-    template <typename T>
-    using myvector<T> = NotSimpleVector<T>;
-
-    myvector<int> a;
+    NotSimpleVector<int> a;
     int n;
     cin >> n;
     int x;
@@ -16,6 +15,7 @@ int main()
         cin >> x;
         a.push_back(x);
     }
+    a.erase(a.begin());
     for(int el : a)
         cout << el << ' ';
 }
